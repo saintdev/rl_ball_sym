@@ -19,16 +19,15 @@ criterion = "0.3"
 lazy_static = "1.4.0"
 
 [dependencies]
-byteorder = "1.*"
 vvec3 = "0.1.*"
 
 [profile.release]
-codegen-units=1
+codegen-units = 1
 lto = "fat"
 panic = "abort"
 
 [profile.bench]
-codegen-units=1
+codegen-units = 1
 lto = "fat"
 
 [[bench]]

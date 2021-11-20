@@ -1,7 +1,3 @@
-use byteorder::{LittleEndian, ReadBytesExt};
-use std::borrow::Cow;
-use std::io::{Cursor, ErrorKind};
-
 pub mod linear_algebra;
 pub mod simulation;
 
@@ -13,47 +9,28 @@ use vvec3::Vec3;
 
 use crate::simulation::field::InitializeThrowbackParams;
 
-fn read_mesh<'a>(ids_dat: Vec<u8>, vertices_dat: Vec<u8>) -> Mesh<'a> {
-    let mut ids_dat = Cursor::new(ids_dat);
-    let mut vertices_dat = Cursor::new(vertices_dat);
-    let mut ids: Vec<i32> = Vec::new();
-    let mut vertices: Vec<f32> = Vec::new();
-
-    loop {
-        ids.push(match ids_dat.read_i32::<LittleEndian>() {
-            Ok(num) => num,
-            Err(error) => match error.kind() {
-                ErrorKind::UnexpectedEof => break,
-                other_error => {
-                    panic!("Problem parsing file: {:?}", other_error)
-                }
-            },
-        });
-    }
-
-    loop {
-        vertices.push(match vertices_dat.read_f32::<LittleEndian>() {
-            Ok(num) => num,
-            Err(error) => match error.kind() {
-                ErrorKind::UnexpectedEof => break,
-                other_error => {
-                    panic!("Problem parsing file: {:?}", other_error)
-                }
-            },
-        });
-    }
-
-    Mesh {
-        ids: Cow::from(ids),
-        vertices: Cow::from(vertices),
-    }
+#[allow(unused)]
+mod tables {
+    include!(concat!(env!("OUT_DIR"), "/mesh_tables.rs"));
 }
 
 pub fn load_soccar() -> Game {
-    let soccar_corner: Mesh = read_mesh(include_bytes!("../assets/soccar/soccar_corner_ids.bin").to_vec(), include_bytes!("../assets/soccar/soccar_corner_vertices.bin").to_vec());
-    let soccar_goal: Mesh = read_mesh(include_bytes!("../assets/soccar/soccar_goal_ids.bin").to_vec(), include_bytes!("../assets/soccar/soccar_goal_vertices.bin").to_vec());
-    let soccar_ramps_0: Mesh = read_mesh(include_bytes!("../assets/soccar/soccar_ramps_0_ids.bin").to_vec(), include_bytes!("../assets/soccar/soccar_ramps_0_vertices.bin").to_vec());
-    let soccar_ramps_1: Mesh = read_mesh(include_bytes!("../assets/soccar/soccar_ramps_1_ids.bin").to_vec(), include_bytes!("../assets/soccar/soccar_ramps_1_vertices.bin").to_vec());
+    let soccar_corner = Mesh {
+        ids: tables::SOCCAR_CORNER_IDS.into(),
+        vertices: tables::SOCCAR_CORNER_VERTICES.into(),
+    };
+    let soccar_goal = Mesh {
+        ids: tables::SOCCAR_GOAL_IDS.into(),
+        vertices: tables::SOCCAR_GOAL_VERTICES.into(),
+    };
+    let soccar_ramps_0 = Mesh {
+        ids: tables::SOCCAR_RAMPS_0_IDS.into(),
+        vertices: tables::SOCCAR_RAMPS_0_VERTICES.into(),
+    };
+    let soccar_ramps_1 = Mesh {
+        ids: tables::SOCCAR_RAMPS_1_IDS.into(),
+        vertices: tables::SOCCAR_RAMPS_1_VERTICES.into(),
+    };
 
     let collision_mesh = initialize_soccar(&soccar_corner, &soccar_goal, &soccar_ramps_0, &soccar_ramps_1);
 
@@ -69,11 +46,26 @@ pub fn load_soccar() -> Game {
 }
 
 pub fn load_hoops() -> Game {
-    let hoops_corner: Mesh = read_mesh(include_bytes!("../assets/hoops/hoops_corner_ids.bin").to_vec(), include_bytes!("../assets/hoops/hoops_corner_vertices.bin").to_vec());
-    let hoops_net: Mesh = read_mesh(include_bytes!("../assets/hoops/hoops_net_ids.bin").to_vec(), include_bytes!("../assets/hoops/hoops_net_vertices.bin").to_vec());
-    let hoops_rim: Mesh = read_mesh(include_bytes!("../assets/hoops/hoops_rim_ids.bin").to_vec(), include_bytes!("../assets/hoops/hoops_rim_vertices.bin").to_vec());
-    let hoops_ramps_0: Mesh = read_mesh(include_bytes!("../assets/hoops/hoops_ramps_0_ids.bin").to_vec(), include_bytes!("../assets/hoops/hoops_ramps_0_vertices.bin").to_vec());
-    let hoops_ramps_1: Mesh = read_mesh(include_bytes!("../assets/hoops/hoops_ramps_1_ids.bin").to_vec(), include_bytes!("../assets/hoops/hoops_ramps_1_vertices.bin").to_vec());
+    let hoops_corner = Mesh {
+        ids: tables::HOOPS_CORNER_IDS.into(),
+        vertices: tables::HOOPS_CORNER_VERTICES.into(),
+    };
+    let hoops_net = Mesh {
+        ids: tables::HOOPS_NET_IDS.into(),
+        vertices: tables::HOOPS_NET_VERTICES.into(),
+    };
+    let hoops_rim = Mesh {
+        ids: tables::HOOPS_RIM_IDS.into(),
+        vertices: tables::HOOPS_RIM_VERTICES.into(),
+    };
+    let hoops_ramps_0 = Mesh {
+        ids: tables::HOOPS_RAMPS_0_IDS.into(),
+        vertices: tables::HOOPS_RAMPS_0_VERTICES.into(),
+    };
+    let hoops_ramps_1 = Mesh {
+        ids: tables::HOOPS_RAMPS_1_IDS.into(),
+        vertices: tables::HOOPS_RAMPS_1_VERTICES.into(),
+    };
 
     let collision_mesh = initialize_hoops(&hoops_corner, &hoops_net, &hoops_rim, &hoops_ramps_0, &hoops_ramps_1);
 
@@ -89,7 +81,10 @@ pub fn load_hoops() -> Game {
 }
 
 pub fn load_dropshot() -> Game {
-    let dropshot: Mesh = read_mesh(include_bytes!("../assets/dropshot/dropshot_ids.bin").to_vec(), include_bytes!("../assets/dropshot/dropshot_vertices.bin").to_vec());
+    let dropshot = Mesh {
+        ids: tables::DROPSHOT_IDS.into(),
+        vertices: tables::DROPSHOT_VERTICES.into(),
+    };
 
     let collision_mesh = initialize_dropshot(&dropshot);
 
@@ -107,16 +102,46 @@ pub fn load_dropshot() -> Game {
 pub fn load_soccar_throwback() -> Game {
     println!("WARNING: THIS MAP IS KNOWN TO CAUSE EXTREME LAG WHEN GENERATING THE BALL PREDICTION STRUCT.");
 
-    let back_ramps_lower: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_back_ramps_lower_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_back_ramps_lower_vertices.bin").to_vec());
-    let back_ramps_upper: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_back_ramps_upper_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_back_ramps_upper_vertices.bin").to_vec());
-    let corner_ramps_lower: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_corner_ramps_lower_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_corner_ramps_lower_vertices.bin").to_vec());
-    let corner_ramps_upper: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_corner_ramps_upper_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_corner_ramps_upper_vertices.bin").to_vec());
-    let corner_wall_0: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_corner_wall_0_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_corner_wall_0_vertices.bin").to_vec());
-    let corner_wall_1: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_corner_wall_1_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_corner_wall_1_vertices.bin").to_vec());
-    let corner_wall_2: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_corner_wall_2_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_corner_wall_2_vertices.bin").to_vec());
-    let goal: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_goal_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_goal_vertices.bin").to_vec());
-    let side_ramps_lower: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_side_ramps_lower_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_side_ramps_lower_vertices.bin").to_vec());
-    let side_ramps_upper: Mesh = read_mesh(include_bytes!("../assets/throwback/throwback_side_ramps_upper_ids.bin").to_vec(), include_bytes!("../assets/throwback/throwback_side_ramps_upper_vertices.bin").to_vec());
+    let back_ramps_lower = Mesh {
+        ids: tables::THROWBACK_BACK_RAMPS_LOWER_IDS.into(),
+        vertices: tables::THROWBACK_BACK_RAMPS_LOWER_VERTICES.into(),
+    };
+    let back_ramps_upper = Mesh {
+        ids: tables::THROWBACK_BACK_RAMPS_UPPER_IDS.into(),
+        vertices: tables::THROWBACK_BACK_RAMPS_UPPER_VERTICES.into(),
+    };
+    let corner_ramps_lower = Mesh {
+        ids: tables::THROWBACK_CORNER_RAMPS_LOWER_IDS.into(),
+        vertices: tables::THROWBACK_CORNER_RAMPS_LOWER_VERTICES.into(),
+    };
+    let corner_ramps_upper = Mesh {
+        ids: tables::THROWBACK_CORNER_RAMPS_UPPER_IDS.into(),
+        vertices: tables::THROWBACK_CORNER_RAMPS_UPPER_VERTICES.into(),
+    };
+    let corner_wall_0 = Mesh {
+        ids: tables::THROWBACK_CORNER_WALL_0_IDS.into(),
+        vertices: tables::THROWBACK_CORNER_WALL_0_VERTICES.into(),
+    };
+    let corner_wall_1 = Mesh {
+        ids: tables::THROWBACK_CORNER_WALL_1_IDS.into(),
+        vertices: tables::THROWBACK_CORNER_WALL_1_VERTICES.into(),
+    };
+    let corner_wall_2 = Mesh {
+        ids: tables::THROWBACK_CORNER_WALL_2_IDS.into(),
+        vertices: tables::THROWBACK_CORNER_WALL_2_VERTICES.into(),
+    };
+    let goal = Mesh {
+        ids: tables::THROWBACK_GOAL_IDS.into(),
+        vertices: tables::THROWBACK_GOAL_VERTICES.into(),
+    };
+    let side_ramps_lower = Mesh {
+        ids: tables::THROWBACK_SIDE_RAMPS_LOWER_IDS.into(),
+        vertices: tables::THROWBACK_SIDE_RAMPS_LOWER_VERTICES.into(),
+    };
+    let side_ramps_upper = Mesh {
+        ids: tables::THROWBACK_SIDE_RAMPS_UPPER_IDS.into(),
+        vertices: tables::THROWBACK_SIDE_RAMPS_UPPER_VERTICES.into(),
+    };
 
     let params = InitializeThrowbackParams {
         back_ramps_lower: &back_ramps_lower,
