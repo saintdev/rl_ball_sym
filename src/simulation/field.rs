@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::f32::consts::{FRAC_PI_3, FRAC_PI_6};
 
 use super::bvh::Bvh;
@@ -14,12 +15,12 @@ static FLIP_Y: Mat3 = Mat3 {
     m: [[1., 0., 0.], [0., -1., 0.], [0., 0., 1.]],
 };
 
-fn quad(p: Vec3, e1: Vec3, e2: Vec3) -> Mesh {
+fn quad(p: Vec3, e1: Vec3, e2: Vec3) -> Mesh<'static> {
     let vertices: [Vec3; 4] = [p + e1 + e2, p - e1 + e2, p - e1 - e2, p + e1 - e2];
 
     Mesh {
-        ids: vec![0, 1, 3, 1, 2, 3],
-        vertices: vec![vertices[0].x as f32, vertices[0].y as f32, vertices[0].z as f32, vertices[1].x as f32, vertices[1].y as f32, vertices[1].z as f32, vertices[2].x as f32, vertices[2].y as f32, vertices[2].z as f32, vertices[3].x as f32, vertices[3].y as f32, vertices[3].z as f32],
+        ids: Cow::from(vec![0, 1, 3, 1, 2, 3]),
+        vertices: Cow::from(vec![vertices[0].x as f32, vertices[0].y as f32, vertices[0].z as f32, vertices[1].x as f32, vertices[1].y as f32, vertices[1].z as f32, vertices[2].x as f32, vertices[2].y as f32, vertices[2].z as f32, vertices[3].x as f32, vertices[3].y as f32, vertices[3].z as f32]),
     }
 }
 
@@ -30,7 +31,7 @@ pub fn initialize_soccar(soccar_corner: &Mesh, soccar_goal: &Mesh, soccar_ramps_
 
     let side_walls = [quad(Vec3::new(4096., 0., 1024.), Vec3::new(0., -5120., 0.), Vec3::new(0., 0., 1024.)), quad(Vec3::new(-4096., 0., 1024.), Vec3::new(0., 5120., 0.), Vec3::new(0., 0., 1024.))];
 
-    let field_mesh = Mesh::from(vec![
+    let field_mesh = Mesh::from(&[
         soccar_corner,
         &soccar_corner.transform(FLIP_X),
         &soccar_corner.transform(FLIP_Y),
@@ -72,7 +73,7 @@ pub fn initialize_hoops(hoops_corner: &Mesh, hoops_net: &Mesh, hoops_rim: &Mesh,
 
     let back_walls = [quad(Vec3::new(0., 0., 1024.), Vec3::new(0., -5120., 0.), Vec3::new(0., 0., 1024.)), quad(Vec3::new(0., 0., 1024.), Vec3::new(0., 5120., 0.), Vec3::new(0., 0., 1024.))];
 
-    let field_mesh = Mesh::from(vec![
+    let field_mesh = Mesh::from(&[
         hoops_corner,
         &hoops_corner.transform(FLIP_X),
         &hoops_corner.transform(FLIP_Y),
@@ -126,7 +127,7 @@ pub fn initialize_dropshot(dropshot: &Mesh) -> Bvh {
         x = dot(r, x);
     }
 
-    let field_mesh = Mesh::from(vec![&dropshot.transform(q.dot(s)).translate(dz), &floor, &ceiling, &walls[0], &walls[1], &walls[2], &walls[3], &walls[4], &walls[5]]);
+    let field_mesh = Mesh::from(&[&dropshot.transform(q.dot(s)).translate(dz), &floor, &ceiling, &walls[0], &walls[1], &walls[2], &walls[3], &walls[4], &walls[5]]);
 
     let triangles = field_mesh.to_triangles();
 
@@ -134,16 +135,16 @@ pub fn initialize_dropshot(dropshot: &Mesh) -> Bvh {
 }
 
 pub struct InitializeThrowbackParams<'a> {
-    pub back_ramps_lower: &'a Mesh,
-    pub back_ramps_upper: &'a Mesh,
-    pub corner_ramps_lower: &'a Mesh,
-    pub corner_ramps_upper: &'a Mesh,
-    pub corner_wall_0: &'a Mesh,
-    pub corner_wall_1: &'a Mesh,
-    pub corner_wall_2: &'a Mesh,
-    pub goal: &'a Mesh,
-    pub side_ramps_lower: &'a Mesh,
-    pub side_ramps_upper: &'a Mesh,
+    pub back_ramps_lower: &'a Mesh<'a>,
+    pub back_ramps_upper: &'a Mesh<'a>,
+    pub corner_ramps_lower: &'a Mesh<'a>,
+    pub corner_ramps_upper: &'a Mesh<'a>,
+    pub corner_wall_0: &'a Mesh<'a>,
+    pub corner_wall_1: &'a Mesh<'a>,
+    pub corner_wall_2: &'a Mesh<'a>,
+    pub goal: &'a Mesh<'a>,
+    pub side_ramps_lower: &'a Mesh<'a>,
+    pub side_ramps_upper: &'a Mesh<'a>,
 }
 
 pub fn initialize_throwback(
@@ -188,7 +189,7 @@ pub fn initialize_throwback(
     let throwback_corner_wall_2 = corner_wall_2.transform(s);
     let throwback_corner_wall_2_y_flip = corner_wall_2.transform(FLIP_Y);
 
-    let field_mesh = Mesh::from(vec![
+    let field_mesh = Mesh::from(&[
         &throwback_corner_ramps_lower,
         &throwback_corner_ramps_lower.transform(FLIP_X),
         &throwback_corner_ramps_lower_y_flip,

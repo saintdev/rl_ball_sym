@@ -1,4 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt};
+use std::borrow::Cow;
 use std::io::{Cursor, ErrorKind};
 
 pub mod linear_algebra;
@@ -12,7 +13,7 @@ use vvec3::Vec3;
 
 use crate::simulation::field::InitializeThrowbackParams;
 
-fn read_mesh(ids_dat: Vec<u8>, vertices_dat: Vec<u8>) -> Mesh {
+fn read_mesh<'a>(ids_dat: Vec<u8>, vertices_dat: Vec<u8>) -> Mesh<'a> {
     let mut ids_dat = Cursor::new(ids_dat);
     let mut vertices_dat = Cursor::new(vertices_dat);
     let mut ids: Vec<i32> = Vec::new();
@@ -43,8 +44,8 @@ fn read_mesh(ids_dat: Vec<u8>, vertices_dat: Vec<u8>) -> Mesh {
     }
 
     Mesh {
-        ids,
-        vertices,
+        ids: Cow::from(ids),
+        vertices: Cow::from(vertices),
     }
 }
 

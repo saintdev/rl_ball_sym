@@ -1,31 +1,33 @@
+use std::borrow::Cow;
+
 use super::geometry::Tri;
 use crate::linear_algebra::mat::Mat3;
 use crate::linear_algebra::math::dot;
 use vvec3::Vec3;
 
 #[derive(Clone, Debug)]
-pub struct Mesh {
-    pub ids: Vec<i32>,
-    pub vertices: Vec<f32>,
+pub struct Mesh<'a> {
+    pub ids: Cow<'a, [i32]>,
+    pub vertices: Cow<'a, [f32]>,
 }
 
-impl Default for Mesh {
+impl Default for Mesh<'_> {
     fn default() -> Self {
         Self {
-            ids: Vec::new(),
-            vertices: Vec::new(),
+            ids: Cow::default(),
+            vertices: Cow::default(),
         }
     }
 }
 
-impl Mesh {
-    pub fn from(other_meshes: Vec<&Self>) -> Self {
+impl Mesh<'_> {
+    pub fn from(other_meshes: &[&Mesh]) -> Self {
         let mut id_offset = 0;
 
         let mut n_ids = 0;
         let mut n_vertices = 0;
 
-        for m in &other_meshes {
+        for m in other_meshes {
             n_ids += m.ids.len();
             n_vertices += m.vertices.len();
         }
@@ -34,11 +36,11 @@ impl Mesh {
         let mut vertices: Vec<f32> = Vec::with_capacity(n_vertices);
 
         for m in other_meshes {
-            for id in &m.ids {
+            for id in m.ids.iter() {
                 ids.push(id + id_offset);
             }
 
-            for vertex in &m.vertices {
+            for vertex in m.vertices.iter() {
                 vertices.push(*vertex);
             }
 
@@ -81,15 +83,15 @@ impl Mesh {
         // println!("Removed {} duplicate vertices!", dups);
 
         Self {
-            ids,
-            vertices,
+            ids: Cow::from(ids),
+            vertices: Cow::from(vertices),
         }
     }
 
     #[rustfmt::skip]
     pub fn transform(&self, a: Mat3) -> Self {
-        let mut ids: Vec<i32> = self.ids.clone();
-        let mut vertices: Vec<f32> = self.vertices.clone();
+        let mut ids: Vec<i32> = self.ids.to_vec();
+        let mut vertices: Vec<f32> = self.vertices.to_vec();
 
         let n = self.vertices.len() / 3;
 
@@ -113,15 +115,15 @@ impl Mesh {
         }
 
         Mesh {
-            ids,
-            vertices,
+            ids: Cow::from(ids),
+            vertices: Cow::from(vertices),
         }
     }
 
     #[rustfmt::skip]
     pub fn translate(&self, p: Vec3) -> Self {
-        let ids: Vec<i32> = self.ids.clone();
-        let mut vertices: Vec<f32> = self.vertices.clone();
+        let ids: Vec<i32> = self.ids.to_vec();
+        let mut vertices: Vec<f32> = self.vertices.to_vec();
 
         let n = vertices.len() / 3;
         for i in 0..n {
@@ -131,8 +133,8 @@ impl Mesh {
         }
 
         Self {
-            ids,
-            vertices,
+            ids: Cow::from(ids),
+            vertices: Cow::from(vertices),
         }
     }
 
