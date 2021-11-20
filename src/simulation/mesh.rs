@@ -115,21 +115,13 @@ impl Mesh<'_> {
         }
     }
 
-    #[rustfmt::skip]
     pub fn translate(&self, p: Vec3) -> Self {
-        let ids: Vec<i32> = self.ids.to_vec();
-        let mut vertices: Vec<f32> = self.vertices.to_vec();
-
-        let n = vertices.len() / 3;
-        for i in 0..n {
-            vertices[i * 3    ] += p.x as f32;
-            vertices[i * 3 + 1] += p.y as f32;
-            vertices[i * 3 + 2] += p.z as f32;
-        }
+        debug_assert_eq!(self.vertices.len() % 3, 0);
+        let vertices = self.vertices.chunks(3).flat_map(|vertex| [vertex[0] + p.x, vertex[1] + p.y, vertex[2] + p.z]).collect();
 
         Self {
-            ids: Cow::from(ids),
-            vertices: Cow::from(vertices),
+            ids: self.ids.clone(),
+            vertices,
         }
     }
 
