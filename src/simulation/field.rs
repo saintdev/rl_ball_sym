@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::f32::consts::{FRAC_PI_3, FRAC_PI_6};
 
 use super::bvh::Bvh;
@@ -15,12 +14,14 @@ static FLIP_Y: Mat3 = Mat3 {
     m: [[1., 0., 0.], [0., -1., 0.], [0., 0., 1.]],
 };
 
+static QUAD_IDS: &[i32] = &[0, 1, 3, 1, 2, 3];
+
 fn quad(p: Vec3, e1: Vec3, e2: Vec3) -> Mesh<'static> {
-    let vertices: [Vec3; 4] = [p + e1 + e2, p - e1 + e2, p - e1 - e2, p + e1 - e2];
+    let vertices = [p + e1 + e2, p - e1 + e2, p - e1 - e2, p + e1 - e2].iter().flat_map(|vertex| [vertex.x, vertex.y, vertex.z]).collect();
 
     Mesh {
-        ids: Cow::from(vec![0, 1, 3, 1, 2, 3]),
-        vertices: Cow::from(vec![vertices[0].x as f32, vertices[0].y as f32, vertices[0].z as f32, vertices[1].x as f32, vertices[1].y as f32, vertices[1].z as f32, vertices[2].x as f32, vertices[2].y as f32, vertices[2].z as f32, vertices[3].x as f32, vertices[3].y as f32, vertices[3].z as f32]),
+        ids: QUAD_IDS.into(),
+        vertices,
     }
 }
 
