@@ -88,35 +88,30 @@ impl Mesh<'_> {
         }
     }
 
-    #[rustfmt::skip]
     pub fn transform(&self, a: Mat3) -> Self {
-        let mut ids: Vec<i32> = self.ids.to_vec();
-        let mut vertices: Vec<f32> = self.vertices.to_vec();
+        debug_assert_eq!(self.vertices.len() % 3, 0);
+        debug_assert_eq!(self.ids.len() % 3, 0);
 
-        let n = self.vertices.len() / 3;
-
-        for i in 0..n {
-            let v = dot(a, Vec3::new(self.vertices[i * 3    ] as f32, self.vertices[i * 3 + 1] as f32, self.vertices[i * 3 + 2] as f32));
-
-            vertices[i * 3    ] = v.x as f32;
-            vertices[i * 3 + 1] = v.y as f32;
-            vertices[i * 3 + 2] = v.z as f32;
-        }
+        let vertices = self
+            .vertices
+            .chunks(3)
+            .flat_map(|vertex| {
+                let v = dot(a, Vec3::new(vertex[0], vertex[1], vertex[2]));
+                [v.x, v.y, v.z]
+            })
+            .collect();
 
         // for transformations that flip things
         // inside-out, change triangle winding
-        if a.det() < 0 as f32 {
-            let n = ids.len() / 3;
-            for i in 0..n {
-                ids[i * 3    ] = self.ids[i * 3 + 1];
-                ids[i * 3 + 1] = self.ids[i * 3    ];
-                ids[i * 3 + 2] = self.ids[i * 3 + 2];
-            }
-        }
+        let ids = if a.det() < 0. {
+            self.ids.chunks(3).flat_map(|ids| [ids[1], ids[0], ids[2]]).collect()
+        } else {
+            self.ids.clone()
+        };
 
         Mesh {
-            ids: Cow::from(ids),
-            vertices: Cow::from(vertices),
+            ids,
+            vertices,
         }
     }
 
