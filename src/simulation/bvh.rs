@@ -2,8 +2,9 @@ use super::geometry::{Aabb, Tri};
 use super::geometry::{Ray, Sphere};
 use super::morton::Morton;
 use std::boxed::Box;
+use std::fmt;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct BvhNode {
     pub is_terminal: bool,
     pub box_: Aabb,
@@ -218,6 +219,35 @@ impl Bvh {
         contact_point.direction = contact_point.direction.normalize();
 
         Some(contact_point)
+    }
+
+    pub(crate) fn dump_tree(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn print_node(f: &mut fmt::Formatter<'_>, node: &BvhNode, depth: usize) -> fmt::Result {
+            let pad = " ".repeat(depth);
+            if let Some(ref left) = node.left {
+                writeln!(f, "{}left  {:?}", pad, left.box_)?;
+                print_node(f, left, depth + 1)?;
+            }
+            if let Some(ref right) = node.right {
+                writeln!(f, "{}right {:?}", pad, right.box_)?;
+                print_node(f, right, depth + 1)?;
+            }
+            if let Some(ref primitive) = node.primitive {
+                writeln!(f, "{}leaf\t{:?}", pad, primitive)?;
+            }
+            Ok(())
+        }
+        print_node(f, &self.root, 0)
+    }
+}
+
+impl fmt::Debug for Bvh {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            self.dump_tree(f)
+        } else {
+            f.debug_struct("Bvh").field("global_box", &self.global_box).field("num_leaves", &self.num_leaves).field("root", &self.root).finish()
+        }
     }
 }
 
