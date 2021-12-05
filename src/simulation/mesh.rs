@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
+use glam::{Mat3A, Vec3A};
+
 use super::geometry::Tri;
-use crate::linear_algebra::mat::Mat3;
+
 use crate::linear_algebra::math::dot;
-use vvec3::Vec3;
 
 #[derive(Clone, Debug)]
 pub struct Mesh<'a> {
@@ -88,7 +89,7 @@ impl Mesh<'_> {
         }
     }
 
-    pub fn transform(&self, a: Mat3) -> Self {
+    pub fn transform(&self, a: Mat3A) -> Self {
         debug_assert_eq!(self.vertices.len() % 3, 0);
         debug_assert_eq!(self.ids.len() % 3, 0);
 
@@ -96,14 +97,14 @@ impl Mesh<'_> {
             .vertices
             .chunks(3)
             .flat_map(|vertex| {
-                let v = dot(a, Vec3::new(vertex[0], vertex[1], vertex[2]));
-                [v.x, v.y, v.z]
+                let v = dot(a, Vec3A::from_slice(vertex));
+                v.to_array()
             })
             .collect();
 
         // for transformations that flip things
         // inside-out, change triangle winding
-        let ids = if a.det() < 0. {
+        let ids = if a.determinant() < 0. {
             self.ids.chunks(3).flat_map(|ids| [ids[1], ids[0], ids[2]]).collect()
         } else {
             self.ids.clone()
@@ -115,9 +116,10 @@ impl Mesh<'_> {
         }
     }
 
-    pub fn translate(&self, p: Vec3) -> Self {
+    pub fn translate(&self, p: Vec3A) -> Self {
         debug_assert_eq!(self.vertices.len() % 3, 0);
-        let vertices = self.vertices.chunks(3).flat_map(|vertex| [vertex[0] + p.x, vertex[1] + p.y, vertex[2] + p.z]).collect();
+
+        let vertices = self.vertices.chunks(3).flat_map(|vertex| (Vec3A::from_slice(vertex) + p).to_array()).collect();
 
         Self {
             ids: self.ids.clone(),

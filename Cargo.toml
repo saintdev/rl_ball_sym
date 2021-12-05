@@ -19,7 +19,7 @@ criterion = "0.3"
 lazy_static = "1.4.0"
 
 [dependencies]
-vvec3 = "0.1.*"
+glam = "0.20.1"
 
 [profile.release]
 codegen-units = 1

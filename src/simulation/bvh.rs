@@ -85,7 +85,7 @@ impl Bvh {
 
         let mut boxes: Vec<Aabb> = Vec::with_capacity(num_leaves);
         for primitive in primitives {
-            boxes.push(Aabb::from_tri(primitive));
+            boxes.push(primitive.into());
         }
 
         let global_box = global_aabb(&boxes);
@@ -127,7 +127,7 @@ impl Bvh {
     }
 
     pub fn intersect(&self, query_object: &Sphere) -> Vec<Tri> {
-        let query_box: Aabb = Aabb::from_sphere(query_object);
+        let query_box: Aabb = query_object.into();
 
         let mut hits = Vec::with_capacity(16);
 
@@ -203,7 +203,7 @@ impl Bvh {
             let p = tri.center();
             let n = tri.unit_normal();
 
-            let separation = (s.center - p).dot(&n);
+            let separation = (s.center - p).dot(n);
             if separation <= s.radius {
                 count += 1;
                 contact_point.start += s.center - n * separation;
@@ -254,7 +254,7 @@ impl fmt::Debug for Bvh {
 #[cfg(test)]
 mod test {
     use criterion::black_box;
-    use vvec3::Vec3;
+    use glam::{vec3a, Vec3A};
 
     use super::*;
 
@@ -269,28 +269,28 @@ mod test {
     fn global_bounding_box() {
         let bounding_boxes = vec![
             Aabb {
-                min: Vec3::new(MIN_X, 0.0, 0.0),
-                max: Vec3::new(0.0, 0.0, 0.0),
+                min: vec3a(MIN_X, 0.0, 0.0),
+                max: Vec3A::ZERO,
             },
             Aabb {
-                min: Vec3::new(0.0, MIN_Y, 0.0),
-                max: Vec3::new(0.0, 0.0, 0.0),
+                min: vec3a(0.0, MIN_Y, 0.0),
+                max: Vec3A::ZERO,
             },
             Aabb {
-                min: Vec3::new(0.0, 0.0, MIN_Z),
-                max: Vec3::new(0.0, 0.0, 0.0),
+                min: vec3a(0.0, 0.0, MIN_Z),
+                max: Vec3A::ZERO,
             },
             Aabb {
-                min: Vec3::new(0.0, 0.0, 0.0),
-                max: Vec3::new(MAX_X, 0.0, 0.0),
+                min: Vec3A::ZERO,
+                max: vec3a(MAX_X, 0.0, 0.0),
             },
             Aabb {
-                min: Vec3::new(0.0, 0.0, 0.0),
-                max: Vec3::new(0.0, MAX_Y, 0.0),
+                min: Vec3A::ZERO,
+                max: vec3a(0.0, MAX_Y, 0.0),
             },
             Aabb {
-                min: Vec3::new(0.0, 0.0, 0.0),
-                max: Vec3::new(0.0, 0.0, MAX_Z),
+                min: Vec3A::ZERO,
+                max: vec3a(0.0, 0.0, MAX_Z),
             },
         ];
 
@@ -308,12 +308,12 @@ mod test {
     fn global_bounding_box_min() {
         let bounding_boxes = vec![
             Aabb {
-                min: Vec3::new(MIN_X, MIN_Y, MIN_Z),
-                max: Vec3::new(MIN_X, MIN_Y, MIN_Z),
+                min: vec3a(MIN_X, MIN_Y, MIN_Z),
+                max: vec3a(MIN_X, MIN_Y, MIN_Z),
             },
             Aabb {
-                min: Vec3::new(MIN_X, MIN_Y, MIN_Z),
-                max: Vec3::new(MIN_X, MIN_Y, MIN_Z),
+                min: vec3a(MIN_X, MIN_Y, MIN_Z),
+                max: vec3a(MIN_X, MIN_Y, MIN_Z),
             },
         ];
         let global = global_aabb(&bounding_boxes);
@@ -330,12 +330,12 @@ mod test {
     fn global_bounding_box_max() {
         let bounding_boxes = vec![
             Aabb {
-                min: Vec3::new(MAX_X, MAX_Y, MAX_Z),
-                max: Vec3::new(MAX_X, MAX_Y, MAX_Z),
+                min: vec3a(MAX_X, MAX_Y, MAX_Z),
+                max: vec3a(MAX_X, MAX_Y, MAX_Z),
             },
             Aabb {
-                min: Vec3::new(MAX_X, MAX_Y, MAX_Z),
-                max: Vec3::new(MAX_X, MAX_Y, MAX_Z),
+                min: vec3a(MAX_X, MAX_Y, MAX_Z),
+                max: vec3a(MAX_X, MAX_Y, MAX_Z),
             },
         ];
         let global = global_aabb(&bounding_boxes);
@@ -351,7 +351,7 @@ mod test {
     static VERT_MAP: &[[usize; 3]; 12] = &[[1, 0, 2], [3, 1, 2], [7, 5, 6], [4, 6, 5], [2, 0, 4], [6, 2, 4], [7, 3, 5], [1, 5, 3], [4, 0, 1], [5, 4, 1], [7, 6, 3], [2, 3, 6]];
 
     fn generate_tris() -> Vec<Tri> {
-        let verts = &[Vec3::new(-4096.0, -5120.0, 0.0), Vec3::new(-4096.0, -5120.0, 2044.0), Vec3::new(-4096.0, 5120.0, 0.0), Vec3::new(-4096.0, 5120.0, 2044.0), Vec3::new(4096.0, -5120.0, 0.0), Vec3::new(4096.0, -5120.0, 2044.0), Vec3::new(4096.0, 5120.0, 0.0), Vec3::new(4096.0, 5120.0, 2044.0)];
+        let verts = &[vec3a(-4096.0, -5120.0, 0.0), vec3a(-4096.0, -5120.0, 2044.0), vec3a(-4096.0, 5120.0, 0.0), vec3a(-4096.0, 5120.0, 2044.0), vec3a(4096.0, -5120.0, 0.0), vec3a(4096.0, -5120.0, 2044.0), vec3a(4096.0, 5120.0, 0.0), vec3a(4096.0, 5120.0, 2044.0)];
         VERT_MAP
             .iter()
             .map(|map| {
@@ -378,7 +378,7 @@ mod test {
         {
             // Sphere hits nothing
             let sphere = Sphere {
-                center: Vec3::new(0., 0., 1022.),
+                center: vec3a(0., 0., 1022.),
                 radius: 100.,
             };
             let hits = bvh.intersect(&sphere);
@@ -387,7 +387,7 @@ mod test {
         {
             // Sphere hits one Tri
             let sphere = Sphere {
-                center: Vec3::new(4096. / 2., 5120. / 2., 100.),
+                center: vec3a(4096. / 2., 5120. / 2., 100.),
                 radius: 100.,
             };
             let hits = bvh.intersect(&sphere);
@@ -409,7 +409,7 @@ mod test {
         {
             // Middle of two Tris
             let sphere = Sphere {
-                center: Vec3::new(0., 0., 0.),
+                center: Vec3A::ZERO,
                 radius: 100.,
             };
             let hits = bvh.intersect(&sphere);
@@ -419,7 +419,7 @@ mod test {
         {
             // Sphere is in a corner
             let sphere = Sphere {
-                center: Vec3::new(4096., 5120., 0.),
+                center: vec3a(4096., 5120., 0.),
                 radius: 100.,
             };
             let hits = bvh.intersect(&sphere);
@@ -437,7 +437,7 @@ mod test {
         {
             // Sphere hits nothing
             let sphere = Sphere {
-                center: Vec3::new(0., 0., 1022.),
+                center: vec3a(0., 0., 1022.),
                 radius: 100.,
             };
 
@@ -448,7 +448,7 @@ mod test {
         {
             // Sphere hits one Tri
             let sphere = Sphere {
-                center: Vec3::new(4096. / 2., 5120. / 2., 99.),
+                center: vec3a(4096. / 2., 5120. / 2., 99.),
                 radius: 100.,
             };
 
@@ -466,7 +466,7 @@ mod test {
         {
             // Middle of two Tris
             let sphere = Sphere {
-                center: Vec3::new(0., 0., 0.),
+                center: Vec3A::ZERO,
                 radius: 100.,
             };
 
@@ -484,7 +484,7 @@ mod test {
         {
             // Sphere is in a corner
             let sphere = Sphere {
-                center: Vec3::new(4096., 5120., 0.),
+                center: vec3a(4096., 5120., 0.),
                 radius: 100.,
             };
 
@@ -509,7 +509,7 @@ mod test {
 
         {
             let sphere = Sphere {
-                center: Vec3::new(0., 0., 93.15),
+                center: vec3a(0., 0., 93.15),
                 radius: 93.15,
             };
 
@@ -517,12 +517,8 @@ mod test {
 
             assert!(ray.is_some());
             let ray = ray.unwrap();
-            assert!(ray.direction.x.is_finite());
-            assert!(ray.direction.y.is_finite());
-            assert!(ray.direction.z.is_finite());
-            assert!(ray.start.x.is_finite());
-            assert!(ray.start.y.is_finite());
-            assert!(ray.start.z.is_finite());
+            assert!(ray.direction.is_finite());
+            assert!(ray.start.is_finite());
         }
     }
 }
